@@ -24,7 +24,8 @@ def get_coordinates(place_name):
     return lat, lon
 
 def fetch_nearby_data(lat, lon, radius=500):
-    overpass_url = "http://overpass-api.de/api/interpreter"
+    overpass_url = "https://overpass-api.de/api/interpreter"
+
 
     query = f"""
     [out:json];
@@ -37,10 +38,24 @@ def fetch_nearby_data(lat, lon, radius=500):
     out;
     """
 
-    response = requests.post(overpass_url, data=query)
-    data = response.json()
+    try:
+        response = requests.post(
+            overpass_url,
+            data=query,
+            timeout=30
+        )
 
-    return data
+        # If API fails, don't crash
+        if response.status_code != 200:
+            print("Overpass error:", response.status_code)
+            return {"elements": []}
+
+        return response.json()
+
+    except requests.exceptions.RequestException as e:
+        print("Request failed:", e)
+        return {"elements": []}
+
 
 
 def extract_counts(osm_data):
